@@ -126,7 +126,9 @@ document.addEventListener("DOMContentLoaded", async () => {
                 renderCurrentView();
 
                 // Background Sync
-                // Todo: Add API for generic toggle if needed, or re-use logic
+                try {
+                    await API.toggleShoppingItem(id, 0); // Toggle status
+                } catch (e) { console.error("Toggle sync failed", e); }
             }
         }
         else if (action === 'clear') {
@@ -135,6 +137,22 @@ document.addEventListener("DOMContentLoaded", async () => {
             renderCurrentView();
         }
     };
+
+    // --- Helper: Cloud Sync ---
+    async function saveSettingsToCloud() {
+        // Gather all settings
+        const settings = {
+            categories: JSON.parse(localStorage.getItem('moneyfy_categories') || '[]'),
+            goals: JSON.parse(localStorage.getItem('moneyfy_goals') || '[]'),
+            budget: localStorage.getItem('moneyfy_budget') || 5000,
+            category_budgets: JSON.parse(localStorage.getItem('moneyfy_category_budgets') || '{}'),
+            deleted_items: JSON.parse(localStorage.getItem('moneyfy_deleted_items') || '[]')
+        };
+        try {
+            console.log("Syncing settings to cloud...", settings);
+            await API.saveSettings(settings); // Background save
+        } catch (e) { console.error("Settings sync failed", e); }
+    }
 
     // --- Toast Notification ---
     window.showToast = (message, type = 'success') => {
@@ -218,6 +236,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             const goals = JSON.parse(localStorage.getItem('moneyfy_goals') || '[]');
             goals.push({ id: Date.now(), title, target, saved });
             localStorage.setItem('moneyfy_goals', JSON.stringify(goals));
+            saveSettingsToCloud(); // Sync
 
             window.openFeatureModal(Features.renderGoals(goals));
         }
@@ -225,6 +244,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             let goals = JSON.parse(localStorage.getItem('moneyfy_goals') || '[]');
             goals = goals.filter(g => g.id != data);
             localStorage.setItem('moneyfy_goals', JSON.stringify(goals));
+            saveSettingsToCloud(); // Sync
             window.openFeatureModal(Features.renderGoals(goals));
         }
         else if (action === 'bills') {
@@ -267,10 +287,9 @@ document.addEventListener("DOMContentLoaded", async () => {
             const cats = JSON.parse(localStorage.getItem('moneyfy_categories')) || defaults;
             cats.push({ name, icon });
             localStorage.setItem('moneyfy_categories', JSON.stringify(cats));
+            saveSettingsToCloud(); // Sync
             // Sync with current view
             window.openFeatureModal(Features.renderCategories(cats));
-            // Reload whole app to update modal dropdowns? Ideally yes or just navigate
-            // For now, next time they open modal it will be there.
         }
         else if (action === 'delete_category') {
             const defaults = [
@@ -279,12 +298,16 @@ document.addEventListener("DOMContentLoaded", async () => {
             let cats = JSON.parse(localStorage.getItem('moneyfy_categories')) || defaults;
             cats = cats.filter(c => c.name !== data);
             localStorage.setItem('moneyfy_categories', JSON.stringify(cats));
+            saveSettingsToCloud(); // Sync
             window.openFeatureModal(Features.renderCategories(cats));
         }
         else if (action === 'set_budget') {
             // Data is the text value
             let val = parseFloat(data.replace(/[^0-9.]/g, ''));
-            if (val) localStorage.setItem('moneyfy_budget', val);
+            if (val) {
+                localStorage.setItem('moneyfy_budget', val);
+                saveSettingsToCloud(); // Sync
+            }
         }
         else if (action === 'settings') {
             window.openFeatureModal(Features.renderSettings());
