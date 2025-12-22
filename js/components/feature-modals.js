@@ -342,48 +342,7 @@ export const Features = {
         `;
     },
     // Calc spent this month
-    const now = new Date();
-    const monthTx = transactions.filter(tx => {
-        const d = new Date(tx.timestamp || tx.date);
-        return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear() && tx.type === 'expense';
-    });
 
-    const totalSpent = monthTx.reduce((sum, tx) => sum + Number(tx.amount), 0);
-    const percent = Math.min((totalSpent / currentBudget) * 100, 100);
-    const remaining = currentBudget - totalSpent;
-    const statusColor = remaining < 0 ? 'var(--danger-red)' : 'var(--success-green)';
-
-    return `
-             <div class="feature-view">
-                <div class="feature-header">
-                    <h2>الميزانية الشهرية 💸</h2>
-                </div>
-                
-                <div class="budget-card" style="background:var(--bg-card); padding:20px; border-radius:20px; text-align:center; border:1px solid rgba(255,255,255,0.1);">
-                    <div style="font-size:12px; color:var(--text-dim)">الميزانية المحددة</div>
-                    <div style="font-size:24px; font-weight:bold; font-family:var(--font-num)" id="budget-display" contenteditable="true" onblur="window.handleAppAction('set_budget', this.innerText)">${currentBudget}</div>
-                    <div style="font-size:10px; opacity:0.6;">(اضغط للرقم للتعديل)</div>
-                    
-                    <div class="progress-bar-mini" style="height:12px; margin: 20px 0; background:rgba(255,255,255,0.05)">
-                        <div class="progress-fill" style="width: ${percent}%; background: ${remaining < 0 ? 'red' : 'var(--primary-neon)'}"></div>
-                    </div>
-                    
-                    <div style="display:flex; justify-content:space-between; margin-top:10px;">
-                        <div style="text-align:right">
-                            <div style="font-size:10px; color:var(--text-dim)">مصروف</div>
-                            <div style="font-family:var(--font-num); color:var(--danger-red)">${totalSpent.toLocaleString()}</div>
-                        </div>
-                         <div style="text-align:left">
-                            <div style="font-size:10px; color:var(--text-dim)">متبقي</div>
-                            <div style="font-family:var(--font-num); color:${statusColor}">${remaining.toLocaleString()}</div>
-                        </div>
-                    </div>
-                </div>
-
-                 <button class="btn-primary" style="margin-top:20px" onclick="window.closeFeatureModal()">إغلاق</button>
-             </div>
-        `;
-}
 };
 
 // Helper for Colors
