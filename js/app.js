@@ -94,6 +94,15 @@ document.addEventListener("DOMContentLoaded", async () => {
             State.pendingBuyItem = { id, name };
         }
 
+        else if (action === 'delete') {
+            if (confirm('هل أنت متأكد من حذف هذا العنصر؟')) {
+                State.shoppingList = State.shoppingList.filter(i => i.id !== id);
+                StorageService.updateShoppingListLocal(State.shoppingList);
+                renderCurrentView();
+                // OPTIONAL: API call for delete if supported
+            }
+        }
+
         else if (action === 'restore') {
             // Optimistic Toggle
             const item = State.shoppingList.find(i => i.id === id);
@@ -106,8 +115,10 @@ document.addEventListener("DOMContentLoaded", async () => {
                 // Todo: Add API for generic toggle if needed, or re-use logic
             }
         }
-        else if (action === 'clear_completed') {
-            // ... logic for clear ...
+        else if (action === 'clear') {
+            State.shoppingList = State.shoppingList.filter(i => !i.completed);
+            StorageService.updateShoppingListLocal(State.shoppingList);
+            renderCurrentView();
         }
     };
 
@@ -160,7 +171,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         // We reuse modal-overlay but inject a different child container
         overlay.innerHTML = `
-        <div class="auth-card glass-panel" style="width: 90%; max-width: 400px; text-align: right; overflow:hidden;">
+        <div class="auth-card glass-panel" style="width: 90%; max-width: 400px; text-align: right; overflow-y:auto; max-height:85vh;">
             ${content}
         </div>
     `;
@@ -169,28 +180,59 @@ document.addEventListener("DOMContentLoaded", async () => {
     };
 
     // --- Global Actions (More View etc) ---
-    window.handleAppAction = (action) => {
+    // REDEFINING handleAppAction to accept data
+    window.handleAppAction = (action, data) => {
         if (action === 'logout') {
             if (confirm('هل أنت متأكد من تسجيل الخروج؟')) {
                 auth.logout();
             }
-        } else if (action === 'reports') {
-            const filteredTx = getFilteredTransactions(); // Use current filtered data
+        }
+        else if (action === 'reports') {
+            const filteredTx = getFilteredTransactions();
             window.openFeatureModal(Features.renderReports(filteredTx));
-        } else if (action === 'goals') {
-            window.openFeatureModal(Features.renderGoals());
-        } else if (action === 'bills') {
+        }
+        else if (action === 'goals') {
+            const goals = JSON.parse(localStorage.getItem('moneyfy_goals') || '[]');
+            window.openFeatureModal(Features.renderGoals(goals));
+        }
+        else if (action === 'add_goal') {
+            const title = document.getElementById('goal-title').value;
+            const target = document.getElementById('goal-target').value;
+            const saved = document.getElementById('goal-saved').value || 0;
+            if (!title || !target) return alert('الرجاء تعبئة البيانات');
+
+            const goals = JSON.parse(localStorage.getItem('moneyfy_goals') || '[]');
+            goals.push({ id: Date.now(), title, target, saved });
+            localStorage.setItem('moneyfy_goals', JSON.stringify(goals));
+
+            window.openFeatureModal(Features.renderGoals(goals));
+        }
+        else if (action === 'delete_goal') { // Data is ID
+            let goals = JSON.parse(localStorage.getItem('moneyfy_goals') || '[]');
+            goals = goals.filter(g => g.id != data);
+            localStorage.setItem('moneyfy_goals', JSON.stringify(goals));
+            window.openFeatureModal(Features.renderGoals(goals));
+        }
+        else if (action === 'bills') {
             window.openFeatureModal(Features.renderBills());
-        } else if (action === 'budget') {
-            window.openFeatureModal(Features.renderUpcoming());
+        }
+        else if (action === 'budget') {
+            const budget = localStorage.getItem('moneyfy_budget') || 5000;
+            const filteredTx = getFilteredTransactions();
+            window.openFeatureModal(Features.renderBudget(filteredTx, budget));
+        }
+        else if (action === 'set_budget') {
+            // Data is the text value
+            let val = parseFloat(data.replace(/[^0-9.]/g, ''));
+            if (val) localStorage.setItem('moneyfy_budget', val);
         }
     };
     // --- Data Loading ---
     async function loadData() {
         const mainView = document.getElementById("main-view");
 
-        // Check User Role for Default View on First Load only
-        if (State.currentUser && State.currentUser.id === 'user_2' && State.currentView === 'home') {
+        // Restrict User_2 to Market
+        if (State.currentUser && State.currentUser.id === 'user_2') {
             State.currentView = 'market';
         }
 
@@ -284,7 +326,24 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     function updateNavState() {
         const navItems = document.querySelectorAll(".nav-item");
+
+        // Hide nav items for Wife (User 2)
+        const isWife = State.currentUser && State.currentUser.id === 'user_2';
+
         navItems.forEach(item => {
+            // If Wife, hide everything except Market
+            if (isWife) {
+                if (item.dataset.target !== 'market') {
+                    item.style.display = 'none';
+                } else {
+                    item.style.display = 'flex';
+                    item.style.width = '100%'; // Full width for the only button
+                }
+            } else {
+                item.style.display = 'flex'; // Reset
+                item.style.width = '';
+            }
+
             if (item.dataset.target === State.currentView) {
                 item.classList.add("active");
             } else {
@@ -325,6 +384,12 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     navItems.forEach(item => {
         item.addEventListener("click", () => {
+            // Prevent Wife from navigating away from Market
+            if (State.currentUser && State.currentUser.id === 'user_2' && item.dataset.target !== 'market') {
+                window.showToast('عذراً، لا تملكين صلاحية الوصول لهذه الصفحة', 'error');
+                return;
+            }
+
             // Remove active class from all
             navItems.forEach(nav => nav.classList.remove("active"));
             // Add to clicked
@@ -340,6 +405,13 @@ document.addEventListener("DOMContentLoaded", async () => {
     const fab = document.getElementById("fab-add");
     if (fab) {
         fab.addEventListener("click", () => {
+            // Disable FAB for Wife if it opens Transaction Modal
+            if (State.currentUser && State.currentUser.id === 'user_2') {
+                // Maybe default FAB should add Shopping Item for her?
+                // For now, simple error
+                window.showToast('للإضافة استخدمي زر الإضافة في القائمة', 'error');
+                return;
+            }
             transModal.open();
         });
     }
