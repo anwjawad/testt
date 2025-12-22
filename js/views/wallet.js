@@ -52,9 +52,12 @@ export function renderWallet(transactions = []) {
         // Icon Logic
         let iconClass = 'fa-sack-dollar';
         let catColorClass = 'category-salary';
-        if (tx.category.includes('أكل') || tx.category.includes('طعام')) { iconClass = 'fa-burger'; catColorClass = 'category-food'; }
-        else if (tx.category.includes('سوبر') || tx.category.includes('تسو')) { iconClass = 'fa-basket-shopping'; catColorClass = 'category-shopping'; }
-        else if (tx.category.includes('سيارة') || tx.category.includes('بنزين') || tx.category.includes('مواصلات')) { iconClass = 'fa-gas-pump'; catColorClass = 'category-car'; }
+
+        const category = String(tx.category || '');
+
+        if (category.includes('أكل') || category.includes('طعام')) { iconClass = 'fa-burger'; catColorClass = 'category-food'; }
+        else if (category.includes('سوبر') || category.includes('تسو')) { iconClass = 'fa-basket-shopping'; catColorClass = 'category-shopping'; }
+        else if (category.includes('سيارة') || category.includes('بنزين') || category.includes('مواصلات')) { iconClass = 'fa-gas-pump'; catColorClass = 'category-car'; }
 
         const timeStr = new Date(tx.timestamp).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
 

@@ -49,12 +49,14 @@ export function renderHome(transactions = []) {
     let iconClass = 'fa-sack-dollar';
     let catColorClass = 'category-salary';
 
+    const category = String(tx.category || '');
+
     // Auto-detect category styles (Mock logic)
-    if (tx.category.includes('أكل') || tx.category.includes('طعام')) {
+    if (category.includes('أكل') || category.includes('طعام')) {
       iconClass = 'fa-burger'; catColorClass = 'category-food';
-    } else if (tx.category.includes('سوبر') || tx.category.includes('تسو')) {
+    } else if (category.includes('سوبر') || category.includes('تسو')) {
       iconClass = 'fa-basket-shopping'; catColorClass = 'category-shopping';
-    } else if (tx.category.includes('سيارة') || tx.category.includes('بنزين')) {
+    } else if (category.includes('سيارة') || category.includes('بنزين')) {
       iconClass = 'fa-gas-pump'; catColorClass = 'category-car';
     }
 
