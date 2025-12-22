@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Moneyfy V2</title>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;700&family=Cairo:wght@400;600;700&display=swap"
+        rel="stylesheet">
+
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://site-assets.fontawesome.com/releases/v6.4.2/css/all.css">
+
+    <!-- Core CSS -->
+    <link rel="stylesheet" href="css/style.css">
+
+    <!-- PWA -->
+    <link rel="manifest" href="../Moneyfy/manifest.json">
+    <meta name="theme-color" content="#050A14">
+</head>
+
+<body>
+
+    <!-- App Wrapper -->
+    <div id="app" class="app-container">
+
+        <!-- Dynamic Header -->
+        <header class="glass-header">
+            <div class="user-profile">
+                <img src="https://ui-avatars.com/api/?name=User&background=3fa9f5&color=fff" class="avatar-sm"
+                    alt="Profile">
+                <div class="header-text">
+                    <span class="greeting">أهلاً بك 👋</span>
+                    <span class="username" id="current-user-name">ضيف</span>
+                </div>
+            </div>
+            <div class="header-actions">
+                <button class="icon-btn-ghost"><i class="fa-regular fa-bell"></i></button>
+            </div>
+        </header>
+
+        <!-- Main Content Area -->
+        <main id="main-view" class="main-view">
+            <!-- Views will be injected here via JS -->
+            <div class="loading-spinner">
+                <div class="spinner-ring"></div>
+            </div>
+        </main>
+
+        <!-- Floating Action Button (FAB) -->
+        <button id="fab-add" class="fab-main">
+            <i class="fa-solid fa-plus"></i>
+        </button>
+
+        <!-- Bottom Navigation -->
+        <nav class="bottom-nav glass-dock">
+            <button class="nav-item active" data-target="home">
+                <i class="fa-regular fa-house"></i>
+                <span>الرئيسية</span>
+            </button>
+
+            <button class="nav-item" data-target="wallet">
+                <i class="fa-regular fa-wallet"></i>
+                <span>المحفظة</span>
+            </button>
+
+            <div class="nav-spacer"></div> <!-- Space for FAB -->
+
+            <button class="nav-item" data-target="market">
+                <i class="fa-regular fa-basket-shopping"></i>
+                <span>السوق</span>
+            </button>
+
+            <button class="nav-item" data-target="more">
+                <i class="fa-regular fa-grid-2"></i>
+                <span>المزيد</span>
+            </button>
+        </nav>
+
+    </div>
+
+    <!-- Scripts -->
+    <script type="module" src="js/app.js"></script>
+</body>
+
+</html>
