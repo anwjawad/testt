@@ -10,12 +10,12 @@ export class AuthSystem {
 
     init() {
         // Check if already logged in (Persistent Session)
-        const savedUser = localStorage.getItem('moneyfy_user');
-        if (savedUser) {
-            this.currentUser = JSON.parse(savedUser);
-            this.updateHeader();
-            return true; // Logged in
-        }
+        // const savedUser = localStorage.getItem('moneyfy_user');
+        // if (savedUser) {
+        //     this.currentUser = JSON.parse(savedUser);
+        //     this.updateHeader();
+        //     return true; // Logged in
+        // }
 
         this.render();
         return false; // Not logged in

@@ -81,3 +81,10 @@ export async function toggleShoppingItem(itemId, price = 0) {
         price
     });
 }
+
+export async function deleteShoppingItem(itemId) {
+    return gasCallJSONP({
+        action: "deleteShoppingItem",
+        itemId
+    });
+}

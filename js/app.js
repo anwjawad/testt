@@ -96,10 +96,18 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         else if (action === 'delete') {
             if (confirm('هل أنت متأكد من حذف هذا العنصر؟')) {
+                // Optimistic Local Delete
                 State.shoppingList = State.shoppingList.filter(i => i.id !== id);
                 StorageService.updateShoppingListLocal(State.shoppingList);
                 renderCurrentView();
-                // OPTIONAL: API call for delete if supported
+
+                // Background API Call
+                try {
+                    await API.deleteShoppingItem(id);
+                } catch (e) {
+                    console.error("Failed to delete from server:", e);
+                    // Optionally revert or show toast
+                }
             }
         }
 
