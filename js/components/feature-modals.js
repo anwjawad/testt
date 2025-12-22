@@ -1,93 +1,4 @@
 export const Features = {
-    renderReports(transactions) {
-        // Calculate Totals by Category
-        const categories = {};
-        let totalExpense = 0;
-
-        transactions.forEach(tx => {
-            if (tx.type === 'expense') {
-                const amount = parseFloat(tx.amount);
-                categories[tx.category] = (categories[tx.category] || 0) + amount;
-                totalExpense += amount;
-            }
-        });
-
-        // Sort categories
-        const sortedCats = Object.entries(categories).sort((a, b) => b[1] - a[1]);
-
-        // Generate SVG Pie Chart
-        let currentAngle = 0;
-        const radius = 16;
-        const circumference = 2 * Math.PI * radius;
-
-        let paths = '';
-        if (totalExpense > 0) {
-            paths = sortedCats.map(([cat, amount], index) => {
-                const percentage = amount / totalExpense;
-                const dashArray = percentage * circumference;
-                const color = getColorForCat(cat);
-
-                // For simplicity in SVG dasharray pie, we just need the offset
-                // But native SVG dasharray circle is easier
-
-                // Let's use Conic Gradient for CSS Pie Chart (Easiest & Cleanest)
-                return '';
-            }).join('');
-        }
-
-        // CSS Conic Dividend
-        let gradientStr = '';
-        let deg = 0;
-        sortedCats.forEach(([cat, amount]) => {
-            const percent = (amount / totalExpense) * 100;
-            const color = getColorForCat(cat);
-            gradientStr += `${color} ${deg}% ${deg + percent}%, `;
-            deg += percent;
-        });
-        gradientStr = gradientStr.slice(0, -2); // remove last comma
-
-        if (!gradientStr) gradientStr = '#333 0% 100%';
-
-        return `
-            <div class="feature-view">
-                <div class="feature-header">
-                    <h2>التقارير المالية 📊</h2>
-                    <p class="feature-subtitle">تحليل المصاريف لهذا الشهر</p>
-                </div>
-
-                <div style="display:flex; justify-content:center; margin: 20px 0;">
-                    <div style="width: 150px; height: 150px; border-radius: 50%; background: conic-gradient(${gradientStr}); position: relative; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
-                        <div style="position:absolute; inset: 25%; background: var(--bg-card); border-radius: 50%; display:flex; align-items:center; justify-content:center; flex-direction:column;">
-                           <span style="font-size:10px; color:var(--text-dim)">المجموع</span>
-                           <span style="font-weight:bold; font-family:var(--font-num)">${totalExpense.toLocaleString()}</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="chart-container-glass">
-                    ${sortedCats.length === 0 ? '<p class="empty-msg">لا توجد بيانات لهذا الشهر</p>' : ''}
-                    ${sortedCats.map(([cat, amount]) => {
-            const percent = ((amount / totalExpense) * 100).toFixed(0);
-            return `
-                            <div class="chart-bar-row">
-                                <div class="chart-label">
-                                    <span>${cat}</span>
-                                    <span>${percent}%</span>
-                                </div>
-                                <div class="chart-track">
-                                    <div class="chart-fill" style="width: ${percent}%; background: ${getColorForCat(cat)}"></div>
-                                </div>
-                                <div class="chart-amt">₪ ${amount.toLocaleString()}</div>
-                            </div>
-                        `;
-        }).join('')}
-                </div>
-
-                <button class="btn-primary" onclick="window.closeFeatureModal()">إغلاق</button>
-            </div>
-        `;
-    },
-
     renderGoals(goals = []) {
         const goalsHtml = goals.length === 0 ? '<p class="empty-msg">لم تقم بإضافة أهداف بعد</p>' :
             goals.map(g => `
@@ -198,6 +109,99 @@ export const Features = {
                 </div>
 
                 <button class="btn-primary" onclick="window.closeFeatureModal()">إغلاق</button>
+            </div>
+        `;
+    },
+
+    renderBudget(transactions, categoryBudgets = {}) {
+        // 1. Calculate Spent per Category
+        const now = new Date();
+        const currentMonth = now.toISOString().slice(0, 7);
+        const expenses = transactions.filter(t => t.type === 'expense' && t.date.startsWith(currentMonth));
+
+        const spentByCat = {};
+        let totalSpent = 0;
+        expenses.forEach(t => {
+            const c = t.category || 'غير مصنف';
+            const amt = parseFloat(t.amount || 0);
+            spentByCat[c] = (spentByCat[c] || 0) + amt;
+            totalSpent += amt;
+        });
+
+        // 2. Get All Categories
+        const categories = JSON.parse(localStorage.getItem('moneyfy_categories') || '[]');
+
+        // 3. Render List
+        const listHtml = categories.map(cat => {
+            const spent = spentByCat[cat.name] || 0;
+            const limit = parseFloat(categoryBudgets[cat.name] || 0);
+            const percent = limit > 0 ? (spent / limit) * 100 : 0;
+
+            // Analyze Status & AI Tip
+            let statusColor = 'var(--success-green)';
+            let tip = 'ممتاز! وضعك بالسليم 🟢';
+            let barWidth = Math.min(percent, 100);
+
+            if (limit === 0) {
+                statusColor = '#888';
+                tip = 'لم يتم تحديد ميزانية بعد ⚪';
+            } else if (percent >= 100) {
+                statusColor = 'var(--danger-red)';
+                tip = 'تجاوزت الحد المسموح! 🚨 حاول تقليل المصاريف فوراً';
+            } else if (percent >= 85) {
+                statusColor = 'var(--accent-pink)'; // Orange-ish
+                tip = 'انتبه! أوشكت الميزانية على الانتهاء 🛑';
+            } else if (percent >= 50) {
+                statusColor = 'var(--primary-neon)';
+                tip = 'وصلت لمنتصف الميزانية، راقب صرفك 🟡';
+            }
+
+            return `
+                <div class="budget-card-glass" style="background:rgba(255,255,255,0.05); border-radius:15px; padding:15px; margin-bottom:15px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                        <div style="display:flex; align-items:center; gap:10px;">
+                             <div class="goal-icon">${cat.icon}</div>
+                             <div style="font-weight:bold;">${cat.name}</div>
+                        </div>
+                        <div style="background:rgba(0,0,0,0.3); padding:5px 10px; border-radius:10px; font-size:0.9rem;">
+                             ${spent.toLocaleString()} / 
+                             <input type="number" 
+                                    style="width:70px; background:none; border:none; color:white; border-bottom:1px solid rgba(255,255,255,0.3); text-align:center;" 
+                                    placeholder="0" 
+                                    value="${limit || ''}" 
+                                    onchange="window.handleAppAction('set_category_budget', {category: '${cat.name}', amount: this.value})"> ₪
+                        </div>
+                    </div>
+
+                    <!-- Progress Bar -->
+                    <div style="height:8px; background:rgba(255,255,255,0.1); border-radius:4px; overflow:hidden; margin-bottom:10px;">
+                        <div style="height:100%; width:${barWidth}%; background:${statusColor}; transition:width 0.5s ease;"></div>
+                    </div>
+
+                    <!-- AI Tip -->
+                    <div style="font-size:0.8rem; opacity:0.8; color:${statusColor === 'var(--success-green)' ? '#aaffaa' : statusColor}; display:flex; align-items:center; gap:5px;">
+                         <i class="fa-solid fa-circle-info"></i> ${tip}
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        return `
+            <div class="feature-view">
+                <div class="feature-header">
+                    <h2>الميزانية الذكية 🧠</h2>
+                    <p class="feature-subtitle">راقب مصاريفك لكل فئة بدقة</p>
+                </div>
+
+                <div class="budget-list">
+                    ${listHtml}
+                </div>
+
+                <div style="margin-top:20px; text-align:center; font-size:0.9rem; opacity:0.6;">
+                    💡 نصيحة: حدد مبلغاً لكل فئة لتفعيل التنبيهات الذكية
+                </div>
+
+                <button class="btn-primary" onclick="window.closeFeatureModal()" style="margin-top:20px;">إغلاق</button>
             </div>
         `;
     },
@@ -341,7 +345,7 @@ export const Features = {
              </div>
         `;
     },
-    // Calc spent this month
+
 
 };
 
