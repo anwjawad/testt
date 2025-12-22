@@ -6,30 +6,30 @@ export function renderMore() {
 
     <div class="more-grid">
       <!-- Goals -->
-      <div class="more-card">
-        <div class="more-icon accent"><i class="fa-solid fa-bullseye"></i></div>
+      <div class="more-card" onclick="window.handleAppAction('goals')">
+        <div class="more-icon"><i class="fa-solid fa-bullseye"></i></div>
         <span class="more-title">الأهداف</span>
         <span class="more-desc">خطط لمستقبلك المالي</span>
       </div>
 
       <!-- Reports -->
-      <div class="more-card">
-        <div class="more-icon warning"><i class="fa-solid fa-chart-pie"></i></div>
+      <div class="more-card" onclick="window.handleAppAction('reports')">
+        <div class="more-icon"><i class="fa-solid fa-chart-pie"></i></div>
         <span class="more-title">التقارير</span>
         <span class="more-desc">تحليل المصاريف والدخل</span>
       </div>
 
-      <!-- Categories -->
-      <div class="more-card">
-        <div class="more-icon positive"><i class="fa-solid fa-tags"></i></div>
-        <span class="more-title">التصنيفات</span>
+      <!-- Categories / Bills -->
+      <div class="more-card" onclick="window.handleAppAction('bills')">
+        <div class="more-icon"><i class="fa-solid fa-tags"></i></div>
+        <span class="more-title">الفواتير</span>
         <span class="more-desc">إدارة فئات الصرف</span>
       </div>
 
-       <!-- Data Management -->
-       <div class="more-card">
+       <!-- Data Sync -->
+       <div class="more-card" onclick="window.handleAppAction('budget')">
         <div class="more-icon"><i class="fa-solid fa-database"></i></div>
-        <span class="more-title">البيانات</span>
+        <span class="more-title">الميزانية</span>
         <span class="more-desc">تحديث ومزامنة</span>
       </div>
 

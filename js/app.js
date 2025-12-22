@@ -5,6 +5,7 @@ import { renderMore } from './views/more.js';
 import { TransactionModal } from './components/modal-transaction.js';
 import { StorageService } from './api/storage.js';
 import { AuthSystem } from './components/auth-screen.js'; // Import Auth
+import { Features } from './components/feature-modals.js';
 import * as API from './api/gas.js'; // Still needed for direct calls in helpers if any
 
 // Moneyfy V2 - Core Application Logic
@@ -14,7 +15,8 @@ const State = {
     transactions: [],
     shoppingList: [], // {id, name, completed}
     currentView: 'home',
-    currentUser: null
+    currentUser: null,
+    selectedMonth: new Date().toISOString().slice(0, 7) // 'YYYY-MM'
 };
 
 document.addEventListener("DOMContentLoaded", async () => {
@@ -115,76 +117,114 @@ document.addEventListener("DOMContentLoaded", async () => {
         }, 3000);
     };
 
+
+
+    // Helper to Open Feature Modal
+    window.closeFeatureModal = () => {
+        const el = document.getElementById('feature-modal-overlay');
+        if (el) {
+            el.classList.remove('active');
+            setTimeout(() => el.remove(), 300);
+        }
+    };
+
+    window.openFeatureModal = (content) => {
+        // Remove existing if any
+        window.closeFeatureModal();
+
+        const overlay = document.createElement('div');
+        overlay.id = 'feature-modal-overlay';
+        overlay.className = 'modal-overlay active'; // Re-using modal-overlay style
+        overlay.style.alignItems = "center"; // Center it for features
+
+        // We reuse modal-overlay but inject a different child container
+        overlay.innerHTML = `
+        <div class="auth-card glass-panel" style="width: 90%; max-width: 400px; text-align: right; overflow:hidden;">
+            ${content}
+        </div>
+    `;
+
+        document.body.appendChild(overlay);
+    };
+
     // --- Global Actions (More View etc) ---
     window.handleAppAction = (action) => {
         if (action === 'logout') {
             if (confirm('هل أنت متأكد من تسجيل الخروج؟')) {
                 auth.logout();
             }
+        } else if (action === 'reports') {
+            const filteredTx = getFilteredTransactions(); // Use current filtered data
+            window.openFeatureModal(Features.renderReports(filteredTx));
+        } else if (action === 'goals') {
+            window.openFeatureModal(Features.renderGoals());
+        } else if (action === 'bills' || action === 'budget') {
+            window.openFeatureModal(Features.renderUpcoming());
+            window.openFeatureModal(Features.renderBills()); // Updated to renderBills
         }
     };
     // --- Data Loading ---
     async function loadData() {
         const mainView = document.getElementById("main-view");
 
-        // 1. Load from Cache FIRST (Instant)
-        const { data: localTx, syncPromise: syncTx } = await StorageService.getTransactions();
-        const { data: localList, syncPromise: syncList } = await StorageService.getShoppingList();
-
-        if (localTx.length > 0 || localList.length > 0) {
-            State.transactions = localTx;
-            State.shoppingList = localList;
-            renderCurrentView();
-            console.log("Rendered from Cache");
-        } else {
-            // Only show spinner if cache is empty
-            if (mainView) {
-                mainView.innerHTML = `
-                <div class="loading-spinner">
-                <div class="spinner-ring"></div>
-                </div>
-            `;
-            }
+        // Check User Role for Default View on First Load only
+        // This logic should ideally be in Auth Success, but putting here ensures it runs after data provided
+        if (State.currentUser && State.currentUser.id === 'user_2' && State.currentView === 'home') {
+            State.currentView = 'market'; // Enforce Market as home for Wife
         }
 
-        // 2. Background Sync
+        // 1. Load from LocalStorage (Instant)
+        const cachedTx = StorageService.getTransactions();
+        if (cachedTx.length > 0) {
+            State.transactions = cachedTx;
+            renderCurrentView();
+        } else {
+            mainView.innerHTML = '<div class="loading-spinner"><div class="spinner-ring"></div></div>';
+        }
+
+        const cachedShop = StorageService.getShoppingList();
+        if (cachedShop.length > 0) State.shoppingList = cachedShop;
+
+        // 2. Fetch from API (Background)
         try {
-            const [freshTx, freshList] = await Promise.all([syncTx, syncList]);
+            // Parallel Fetch
+            const [txData, shopData] = await Promise.all([
+                API.fetchTransactions(),
+                API.fetchShoppingList()
+            ]);
 
-            let updated = false;
-            if (freshTx) {
-                State.transactions = freshTx;
-                updated = true;
-            }
-            if (freshList) {
-                State.shoppingList = freshList;
-                updated = true;
-            }
+            // Update State
+            State.transactions = txData;
+            State.shoppingList = shopData;
 
-            if (updated) {
-                console.log("View Updated from Cloud");
-                renderCurrentView();
-            }
+            // Re-render
+            renderCurrentView();
 
-        } catch (e) {
-            console.error("Background Sync Failed:", e);
+        } catch (error) {
+            console.error("Failed to load data:", error);
+            // window.showToast('فشل تحديث البيانات: تأكد من الإنترنت', 'error');
         }
     }
 
-    // --- View Rendering ---
+    // Function to Render Current View
     function renderCurrentView() {
         const mainView = document.getElementById("main-view");
-        if (!mainView) return;
+        const filteredTx = getFilteredTransactions(); // USE FILTERED DATA
 
-        if (State.currentView === "home") {
-            mainView.innerHTML = renderHome(State.transactions);
-        } else if (State.currentView === "wallet") {
-            mainView.innerHTML = renderWallet(State.transactions);
-        } else if (State.currentView === "market") {
-            mainView.innerHTML = renderMarket(State.shoppingList);
-        } else if (State.currentView === "more") {
+        // Pass Current User to Views
+        if (State.currentView === 'home') {
+            mainView.innerHTML = renderHome(filteredTx);
+        } else if (State.currentView === 'wallet') {
+            mainView.innerHTML = renderWallet(filteredTx);
+        } else if (State.currentView === 'market') {
+            mainView.innerHTML = renderMarket(State.shoppingList, State.currentUser); // Pass User
+        } else if (State.currentView === 'more') {
             mainView.innerHTML = renderMore();
         }
+
+        // Re-attach listeners for dynamic content
+        attachViewListeners();
+        updateNavState();
     }
 
     // --- Event Listeners ---

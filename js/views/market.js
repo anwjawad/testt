@@ -9,61 +9,78 @@ export function renderMarket(items = []) {
   const progress = total === 0 ? 0 : Math.round((done / total) * 100);
 
   // Generate HTML for Pending
-  const pendingHtml = pending.length ? pending.map(item => `
-    <div class="shop-item" data-id="${item.id}" data-name="${item.name}">
-      <div class="checkbox-circle" onclick="window.handleMarketAction('buy', '${item.id}', '${item.name}')"></div>
-      <span class="item-name">${item.name}</span>
-      <div class="drag-handle"><i class="fa-solid fa-grip-lines"></i></div>
-    </div>
-  `).join('') : '<div style="text-align:center; opacity:0.5; padding:20px; font-size:12px;">القائمة فارغة 🎉</div>';
+  // Market View Component
+  export function renderMarket(shoppingList, currentUser) {
+    // Permission Check: Amal (user_2) cannot buy
+    const canBuy = currentUser && currentUser.id !== 'user_2';
 
-  // Generate HTML for Completed
-  const completedHtml = completed.map(item => `
-    <div class="shop-item completed" data-id="${item.id}">
-      <div class="checkbox-circle checked" onclick="window.handleMarketAction('restore', '${item.id}')"><i class="fa-solid fa-check"></i></div>
-      <span class="item-name">${item.name}</span>
-    </div>
-  `).join('');
+    // Load Title
+    const savedTitle = localStorage.getItem('market_title') || '🛒 مقاضي البيت';
 
-  return `
-    <div class="section-header">
-      <h3>السوق</h3>
-      <button class="btn-text" onclick="window.handleMarketAction('clear_completed')"><i class="fa-solid fa-trash-can"></i> تنظيف</button>
-    </div>
+    // Calculate Progress
+    const total = shoppingList.length;
+    const completed = shoppingList.filter(i => i.completed).length;
+    const percent = total === 0 ? 0 : (completed / total) * 100;
 
-    <!-- Active List -->
-    <div class="market-list-container">
-      
-      <!-- List Header -->
-      <div class="market-card-header">
-        <div class="list-info">
-          <span class="list-name">🛒 مقاضي البيت</span>
-          <span class="list-count">${done}/${total} عنصر</span>
+    const listHtml = shoppingList.length === 0
+      ? `<div class="empty-state">
+             <i class="fa-solid fa-basket-shopping" style="font-size: 40px; opacity: 0.3; margin-bottom:10px;"></i>
+             <p>القائمة فارغة</p>
+           </div>`
+      : shoppingList.map(item => `
+            <div class="shop-item ${item.completed ? 'completed' : ''}">
+                <!-- Delete Button (Available for All) -->
+                <div class="drag-handle" onclick="window.handleMarketAction('delete', '${item.id}')" style="color:var(--danger-red); opacity: 0.7; margin-left:8px; cursor:pointer;">
+                    <i class="fa-solid fa-trash"></i>
+                </div>
+                
+                <span class="item-name">${item.name}</span>
+                
+                <!-- Buy Button (Restricted) -->
+                ${canBuy ? `
+                    <div class="checkbox-circle ${item.completed ? 'checked' : ''}" 
+                         onclick="window.handleMarketAction(this.classList.contains('checked') ? 'restore' : 'buy', '${item.id}', '${item.name}')">
+                        ${item.completed ? '<i class="fa-solid fa-check"></i>' : ''}
+                    </div>
+                ` : `
+                    <!-- Read Only State for Wife -->
+                    <div style="font-size:12px; opacity:0.5; margin-left:10px;">
+                        ${item.completed ? 'تم ✅' : 'مطلوب'}
+                    </div>
+                `}
+            </div>
+        `).join('');
+
+    return `
+        <!-- Market Header -->
+        <div class="market-list-container">
+            <div class="market-card-header">
+                <div class="list-info">
+                    <h2 class="list-name" contenteditable="true" id="market-title" 
+                        onblur="localStorage.setItem('market_title', this.innerText)">${savedTitle}</h2>
+                    <span class="list-count">${completed}/${total}</span>
+                </div>
+                
+                <div class="progress-bar-mini">
+                    <div class="progress-fill" style="width: ${percent}%"></div>
+                </div>
+
+                <div class="add-item-row mt-4">
+                    <input type="text" id="new-item-input" class="glass-input-sm" placeholder="أضف غرض جديد..." onkeypress="if(event.key === 'Enter') document.getElementById('add-btn').click()">
+                    <button id="add-btn" class="add-btn-sm" onclick="window.handleMarketAction('add', null, document.getElementById('new-item-input').value)">
+                        <i class="fa-solid fa-plus"></i>
+                    </button>
+                    ${total > 0 && canBuy ? `<button class="add-btn-sm" style="background:var(--bg-deep); border:1px solid rgba(255,255,255,0.1); margin-right:8px;" onclick="if(confirm('تنظيف المكتمل؟')) window.handleMarketAction('clear')">
+                        <i class="fa-solid fa-broom"></i>
+                    </button>` : ''}
+                </div>
+            </div>
+
+            <!-- List Items -->
+             <div class="list-section-title">القائمة الحالية</div>
+             ${listHtml}
         </div>
-        <div class="progress-bar-mini">
-          <div class="progress-fill" style="width: ${progress}%"></div>
-        </div>
-      </div>
-
-      <!-- Input Area -->
-      <div class="add-item-row">
-        <input type="text" class="glass-input-sm" placeholder="أضف غرض جديد..." id="new-item-input" onkeypress="if(event.key==='Enter') window.handleMarketAction('add')">
-        <button class="add-btn-sm" onclick="window.handleMarketAction('add')"><i class="fa-solid fa-arrow-up"></i></button>
-      </div>
-
-      <!-- Items List -->
-      <div class="shopping-items-list" id="shopping-list">
         
-        <!-- Pending Items -->
-        <h4 class="list-section-title">مطلوب</h4>
-        ${pendingHtml}
-
-        <!-- Completed Items -->
-        ${completed.length ? `<h4 class="list-section-title mt-4">تم الشراء</h4>${completedHtml}` : ''}
-
-      </div>
-    </div>
-    
-    <div style="height: 40px;"></div>
-  `;
-}
+        <div style="height: 100px;"></div> <!-- Spacer -->
+    `;
+  }

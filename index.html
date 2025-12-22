@@ -35,16 +35,19 @@
         <!-- Dynamic Header -->
         <header class="glass-header">
             <div class="user-profile">
-                <img src="https://ui-avatars.com/api/?name=User&background=3fa9f5&color=fff" class="avatar-sm"
-                    alt="Profile">
+                <img src="https://ui-avatars.com/api/?name=User&background=random" class="avatar-sm">
                 <div class="header-text">
-                    <span class="greeting">أهلاً بك 👋</span>
+                    <span class="greeting">مرحباً،</span>
                     <span class="username" id="current-user-name">ضيف</span>
                 </div>
             </div>
-            <div class="header-actions">
-                <button class="icon-btn-ghost"><i class="fa-regular fa-bell"></i></button>
+
+            <!-- Month Picker -->
+            <div class="month-selector">
+                <input type="month" id="global-date-filter" class="glass-date-input">
             </div>
+
+            <!-- <button class="icon-btn-ghost"><i class="fa-regular fa-bell"></i></button> -->
         </header>
 
         <!-- Main Content Area -->
