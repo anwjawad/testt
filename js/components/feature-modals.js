@@ -166,6 +166,42 @@ export const Features = {
         `;
     },
 
+    renderCategories(categories) {
+        return `
+            <div class="feature-view">
+                <div class="feature-header">
+                    <h2>إدارة الفئات 🏷️</h2>
+                    <p class="feature-subtitle">تخصيص تصنيفات المصاريف</p>
+                </div>
+
+                <div class="goals-list">
+                    ${categories.map(cat => `
+                        <div class="goal-card" style="padding:10px;">
+                            <div class="goal-icon">${cat.icon || '🏷️'}</div>
+                            <div class="goal-info">
+                                <div class="goal-title">${cat.name}</div>
+                            </div>
+                            <div onclick="window.handleAppAction('delete_category', '${cat.name}')" style="color:var(--danger-red); opacity:0.6; cursor:pointer"><i class="fa-solid fa-trash"></i></div>
+                        </div>
+                    `).join('')}
+                </div>
+
+                <hr style="border:0; border-top:1px solid rgba(255,255,255,0.1); margin: 20px 0;">
+
+                <div style="background:rgba(255,255,255,0.03); padding:15px; border-radius:12px;">
+                    <h4 style="margin-bottom:10px; font-size:14px;">أضف فئة جديدة</h4>
+                    <div style="display:flex; gap:8px;">
+                         <input type="text" id="cat-icon" class="glass-input-sm" placeholder="الرمز (emoji)" style="width:60px; text-align:center;">
+                         <input type="text" id="cat-name" class="glass-input-sm" placeholder="اسم الفئة" style="flex:1;">
+                    </div>
+                    <button class="add-btn-sm" style="width:100%; margin-top:10px;" onclick="window.handleAppAction('add_category')">حفظ</button>
+                </div>
+
+                <button class="btn-primary" onclick="window.closeFeatureModal()">إغلاق</button>
+            </div>
+        `;
+    },
+
     renderBudget(transactions, currentBudget) {
         // Calc spent this month
         const now = new Date();

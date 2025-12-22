@@ -19,10 +19,10 @@ export function renderMore() {
         <span class="more-desc">تحليل المصاريف والدخل</span>
       </div>
 
-      <!-- Categories / Bills -->
-      <div class="more-card" onclick="window.handleAppAction('bills')">
+      <!-- Categories -->
+      <div class="more-card" onclick="window.handleAppAction('manage_categories')">
         <div class="more-icon"><i class="fa-solid fa-tags"></i></div>
-        <span class="more-title">الفواتير</span>
+        <span class="more-title">الفئات</span>
         <span class="more-desc">إدارة فئات الصرف</span>
       </div>
 

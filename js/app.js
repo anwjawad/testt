@@ -99,6 +99,12 @@ document.addEventListener("DOMContentLoaded", async () => {
                 // Optimistic Local Delete
                 State.shoppingList = State.shoppingList.filter(i => i.id !== id);
                 StorageService.updateShoppingListLocal(State.shoppingList);
+
+                // Persist deletion (Soft Delete)
+                const deletedIds = JSON.parse(localStorage.getItem('moneyfy_deleted_items') || '[]');
+                if (!deletedIds.includes(id)) deletedIds.push(id);
+                localStorage.setItem('moneyfy_deleted_items', JSON.stringify(deletedIds));
+
                 renderCurrentView();
 
                 // Background API Call
@@ -229,6 +235,38 @@ document.addEventListener("DOMContentLoaded", async () => {
             const filteredTx = getFilteredTransactions();
             window.openFeatureModal(Features.renderBudget(filteredTx, budget));
         }
+        else if (action === 'manage_categories') {
+            const defaults = [
+                { name: 'طعام', icon: '🍔' }, { name: 'تسوق', icon: '🛒' }, { name: 'مواصلات', icon: '⛽' }, { name: 'فواتير', icon: '🧾' }, { name: 'راتب', icon: '💰' }, { name: 'أخرى', icon: '✨' }
+            ];
+            const cats = JSON.parse(localStorage.getItem('moneyfy_categories')) || defaults;
+            window.openFeatureModal(Features.renderCategories(cats));
+        }
+        else if (action === 'add_category') {
+            const name = document.getElementById('cat-name').value;
+            const icon = document.getElementById('cat-icon').value || '🏷️';
+            if (!name) return alert('أدخل اسم الفئة');
+
+            const defaults = [
+                { name: 'طعام', icon: '🍔' }, { name: 'تسوق', icon: '🛒' }, { name: 'مواصلات', icon: '⛽' }, { name: 'فواتير', icon: '🧾' }, { name: 'راتب', icon: '💰' }, { name: 'أخرى', icon: '✨' }
+            ];
+            const cats = JSON.parse(localStorage.getItem('moneyfy_categories')) || defaults;
+            cats.push({ name, icon });
+            localStorage.setItem('moneyfy_categories', JSON.stringify(cats));
+            // Sync with current view
+            window.openFeatureModal(Features.renderCategories(cats));
+            // Reload whole app to update modal dropdowns? Ideally yes or just navigate
+            // For now, next time they open modal it will be there.
+        }
+        else if (action === 'delete_category') {
+            const defaults = [
+                { name: 'طعام', icon: '🍔' }, { name: 'تسوق', icon: '🛒' }, { name: 'مواصلات', icon: '⛽' }, { name: 'فواتير', icon: '🧾' }, { name: 'راتب', icon: '💰' }, { name: 'أخرى', icon: '✨' }
+            ];
+            let cats = JSON.parse(localStorage.getItem('moneyfy_categories')) || defaults;
+            cats = cats.filter(c => c.name !== data);
+            localStorage.setItem('moneyfy_categories', JSON.stringify(cats));
+            window.openFeatureModal(Features.renderCategories(cats));
+        }
         else if (action === 'set_budget') {
             // Data is the text value
             let val = parseFloat(data.replace(/[^0-9.]/g, ''));
@@ -264,8 +302,10 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
 
         if (cachedList && Array.isArray(cachedList)) {
-            State.shoppingList = cachedList;
-            if (cachedList.length > 0) hasCache = true;
+            // Soft Delete Filter
+            const deletedIds = JSON.parse(localStorage.getItem('moneyfy_deleted_items') || '[]');
+            State.shoppingList = cachedList.filter(item => !deletedIds.includes(item.id));
+            if (State.shoppingList.length > 0) hasCache = true;
         }
 
         if (hasCache) {
@@ -292,7 +332,10 @@ document.addEventListener("DOMContentLoaded", async () => {
                 updated = true;
             }
             if (freshList && Array.isArray(freshList)) {
-                State.shoppingList = freshList; // Fixed: was using freshTx
+                // Soft Delete Filter
+                const deletedIds = JSON.parse(localStorage.getItem('moneyfy_deleted_items') || '[]');
+                State.shoppingList = freshList.filter(item => !deletedIds.includes(item.id));
+                State.shoppingList = State.shoppingList; // (Redundant assignment but keeps flow clear)
                 updated = true;
             }
 

@@ -8,6 +8,22 @@ export class TransactionModal {
     this.bindEvents();
   }
 
+  getCategoryOptions() {
+    // Default Cats
+    const defaults = [
+      { name: 'طعام', icon: '🍔' },
+      { name: 'تسوق', icon: '🛒' },
+      { name: 'مواصلات', icon: '⛽' },
+      { name: 'فواتير', icon: '🧾' },
+      { name: 'راتب', icon: '💰' },
+      { name: 'أخرى', icon: '✨' }
+    ];
+    const saved = JSON.parse(localStorage.getItem('moneyfy_categories'));
+    const cats = saved || defaults;
+
+    return cats.map(c => `<option value="${c.name}">${c.icon || '🏷️'} ${c.name}</option>`).join('');
+  }
+
   injectModal() {
     if (document.getElementById(this.modalId)) return;
 
@@ -39,12 +55,7 @@ export class TransactionModal {
             <div class="input-group">
               <label class="input-label">الفئة</label>
               <select class="glass-input category-select">
-                <option value="طعام">🍔 طعام</option>
-                <option value="تسوق">🛒 تسوق</option>
-                <option value="مواصلات">⛽ مواصلات</option>
-                <option value="فواتير">🧾 فواتير</option>
-                <option value="راتب">💰 راتب</option>
-                <option value="أخرى">✨ أخرى</option>
+                ${this.getCategoryOptions()}
               </select>
             </div>
 
