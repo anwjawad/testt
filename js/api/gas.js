@@ -1,6 +1,6 @@
 // Google Apps Script API Wrapper (JSONP)
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycbwSwl80v6Dy8rYambiV2gK3rBIyaaNzQgzSTvn0-aKf-WSR6qZ7Y0OJ1R5E73GpMPKEBw/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbw6hhh0beSrbJpwRlJIIbz_BcVYxPLK2V2_X2QCO8051R1_LJzygvUogKY0T0YlIG1zug/exec";
 
 function gasCallJSONP(paramsObj = {}) {
     return new Promise((resolve) => {
@@ -100,3 +100,4 @@ export async function saveSettings(settingsObj) {
         settingsJson: JSON.stringify(settingsObj)
     });
 }
+
