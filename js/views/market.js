@@ -1,16 +1,5 @@
-export function renderMarket(items = []) {
-  // Separate items
-  const pending = items.filter(i => !i.completed);
-  const completed = items.filter(i => i.completed);
-
-  // Calc progress
-  const total = items.length;
-  const done = completed.length;
-  const progress = total === 0 ? 0 : Math.round((done / total) * 100);
-
-  // Generate HTML for Pending
-  // Market View Component
-  export function renderMarket(shoppingList, currentUser) {
+// Market View Component
+export function renderMarket(shoppingList, currentUser) {
     // Permission Check: Amal (user_2) cannot buy
     const canBuy = currentUser && currentUser.id !== 'user_2';
 
@@ -23,11 +12,11 @@ export function renderMarket(items = []) {
     const percent = total === 0 ? 0 : (completed / total) * 100;
 
     const listHtml = shoppingList.length === 0
-      ? `<div class="empty-state">
+        ? `<div class="empty-state">
              <i class="fa-solid fa-basket-shopping" style="font-size: 40px; opacity: 0.3; margin-bottom:10px;"></i>
              <p>القائمة فارغة</p>
            </div>`
-      : shoppingList.map(item => `
+        : shoppingList.map(item => `
             <div class="shop-item ${item.completed ? 'completed' : ''}">
                 <!-- Delete Button (Available for All) -->
                 <div class="drag-handle" onclick="window.handleMarketAction('delete', '${item.id}')" style="color:var(--danger-red); opacity: 0.7; margin-left:8px; cursor:pointer;">
@@ -83,4 +72,4 @@ export function renderMarket(items = []) {
         
         <div style="height: 100px;"></div> <!-- Spacer -->
     `;
-  }
+}
