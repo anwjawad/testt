@@ -185,41 +185,55 @@ document.addEventListener("DOMContentLoaded", async () => {
         const mainView = document.getElementById("main-view");
 
         // Check User Role for Default View on First Load only
-        // This logic should ideally be in Auth Success, but putting here ensures it runs after data provided
         if (State.currentUser && State.currentUser.id === 'user_2' && State.currentView === 'home') {
-            State.currentView = 'market'; // Enforce Market as home for Wife
+            State.currentView = 'market';
         }
 
         // 1. Load from LocalStorage (Instant)
-        const cachedTx = StorageService.getTransactions();
-        if (cachedTx.length > 0) {
+        // StorageService returns { data: [], syncPromise: Promise }
+        const { data: cachedTx, syncPromise: syncTxPromise } = await StorageService.getTransactions();
+        const { data: cachedList, syncPromise: syncListPromise } = await StorageService.getShoppingList();
+
+        let hasCache = false;
+
+        if (cachedTx && Array.isArray(cachedTx)) {
             State.transactions = cachedTx;
+            if (cachedTx.length > 0) hasCache = true;
+        }
+
+        if (cachedList && Array.isArray(cachedList)) {
+            State.shoppingList = cachedList;
+            if (cachedList.length > 0) hasCache = true;
+        }
+
+        if (hasCache) {
             renderCurrentView();
         } else {
             mainView.innerHTML = '<div class="loading-spinner"><div class="spinner-ring"></div></div>';
         }
 
-        const cachedShop = StorageService.getShoppingList();
-        if (cachedShop.length > 0) State.shoppingList = cachedShop;
-
-        // 2. Fetch from API (Background)
+        // 2. Wait for Background Sync from API
         try {
-            // Parallel Fetch
-            const [txData, shopData] = await Promise.all([
-                API.fetchTransactions(),
-                API.fetchShoppingList()
-            ]);
+            const [freshTx, freshList] = await Promise.all([syncTxPromise, syncListPromise]);
 
-            // Update State
-            State.transactions = txData;
-            State.shoppingList = shopData;
+            let updated = false;
+            // StorageService.sync returns the unwrapped array (or null on fail)
+            if (freshTx && Array.isArray(freshTx)) {
+                State.transactions = freshTx;
+                updated = true;
+            }
+            if (freshList && Array.isArray(freshList)) {
+                State.shoppingList = freshList; // Fixed: was using freshTx
+                updated = true;
+            }
 
-            // Re-render
-            renderCurrentView();
+            if (updated) {
+                console.log("Data synced from cloud");
+                renderCurrentView();
+            }
 
         } catch (error) {
-            console.error("Failed to load data:", error);
-            // window.showToast('فشل تحديث البيانات: تأكد من الإنترنت', 'error');
+            console.error("Failed to sync data:", error);
         }
     }
 
