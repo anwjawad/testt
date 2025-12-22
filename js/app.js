@@ -24,12 +24,16 @@ document.addEventListener("DOMContentLoaded", async () => {
     // Initialize Auth
     const auth = new AuthSystem();
     const isLoggedIn = auth.init(); // Returns true if session exists
+    if (isLoggedIn) {
+        State.currentUser = auth.currentUser;
+    }
 
     // Initialize Components
     const transModal = new TransactionModal();
 
     // If not logged in, wait for event
     window.addEventListener('auth-success', () => {
+        State.currentUser = auth.currentUser; // Sync State
         loadData(); // Reload personalized data if needed
     });
 
@@ -50,7 +54,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     function getFilteredTransactions() {
         if (!State.selectedMonth) return State.transactions;
-        return State.transactions.filter(tx => tx.date.startsWith(State.selectedMonth));
+        return State.transactions.filter(tx => tx.date && tx.date.startsWith(State.selectedMonth));
     }
 
 
