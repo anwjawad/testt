@@ -37,6 +37,23 @@ document.addEventListener("DOMContentLoaded", async () => {
     // This makes it feel faster once you enter PIN.
 
 
+    // --- Date Filter Logic ---
+    const dateInput = document.getElementById('global-date-filter');
+    if (dateInput) {
+        dateInput.value = State.selectedMonth;
+        dateInput.addEventListener('change', (e) => {
+            State.selectedMonth = e.target.value;
+            console.log("Month changed to:", State.selectedMonth);
+            renderCurrentView();
+        });
+    }
+
+    function getFilteredTransactions() {
+        if (!State.selectedMonth) return State.transactions;
+        return State.transactions.filter(tx => tx.date.startsWith(State.selectedMonth));
+    }
+
+
     // --- Market Logic Helpers ---
     window.handleMarketAction = async (action, id, name) => {
         if (action === 'add') {
