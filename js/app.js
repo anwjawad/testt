@@ -185,7 +185,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         // We reuse modal-overlay but inject a different child container
         overlay.innerHTML = `
-        <div class="auth-card glass-panel" style="width: 90%; max-width: 400px; text-align: right; overflow-y:auto; max-height:85vh;">
+        <div class="auth-card glass-panel" style="width: 95%; max-width: 600px; text-align: right; overflow-y:auto; max-height:85vh; padding: 25px;">
             ${content}
         </div>
     `;
@@ -231,9 +231,23 @@ document.addEventListener("DOMContentLoaded", async () => {
             window.openFeatureModal(Features.renderBills());
         }
         else if (action === 'budget') {
-            const budget = localStorage.getItem('moneyfy_budget') || 5000;
+            // New Smart Budget
+            const catBudgets = JSON.parse(localStorage.getItem('moneyfy_category_budgets') || '{}');
             const filteredTx = getFilteredTransactions();
-            window.openFeatureModal(Features.renderBudget(filteredTx, budget));
+            window.openFeatureModal(Features.renderBudget(filteredTx, catBudgets));
+        }
+        else if (action === 'set_category_budget') {
+            // Data is object {category, amount}
+            const { category, amount } = data;
+            const budgets = JSON.parse(localStorage.getItem('moneyfy_category_budgets') || '{}');
+            budgets[category] = parseFloat(amount);
+            localStorage.setItem('moneyfy_category_budgets', JSON.stringify(budgets));
+            saveSettingsToCloud();
+
+            // Re-render to update progress bars
+            const filteredTx = getFilteredTransactions();
+            window.openFeatureModal(Features.renderBudget(filteredTx, budgets));
+            // Note: Re-rendering might lose focus of input, but acceptable for MVP
         }
         else if (action === 'manage_categories') {
             const defaults = [

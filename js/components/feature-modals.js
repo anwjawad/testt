@@ -202,20 +202,158 @@ export const Features = {
         `;
     },
 
-    renderBudget(transactions, currentBudget) {
-        // Calc spent this month
-        const now = new Date();
-        const monthTx = transactions.filter(tx => {
-            const d = new Date(tx.timestamp || tx.date);
-            return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear() && tx.type === 'expense';
+    renderReports(transactions) {
+        // Calculate Totals per Category
+        const expenses = transactions.filter(t => t.type === 'expense');
+        const totalExp = expenses.reduce((sum, t) => sum + parseFloat(t.amount || 0), 0);
+
+        // Group by Category
+        const byCat = {};
+        expenses.forEach(t => {
+            const c = t.category || 'غير مصنف';
+            byCat[c] = (byCat[c] || 0) + parseFloat(t.amount || 0);
         });
 
-        const totalSpent = monthTx.reduce((sum, tx) => sum + Number(tx.amount), 0);
-        const percent = Math.min((totalSpent / currentBudget) * 100, 100);
-        const remaining = currentBudget - totalSpent;
-        const statusColor = remaining < 0 ? 'var(--danger-red)' : 'var(--success-green)';
+        // Ensure all default categories are listed even if 0
+        const defaults = JSON.parse(localStorage.getItem('moneyfy_categories') || '[]');
+        const catList = defaults.map(d => {
+            return {
+                name: d.name,
+                icon: d.icon,
+                amount: byCat[d.name] || 0,
+                percent: totalExp > 0 ? ((byCat[d.name] || 0) / totalExp) * 100 : 0
+            };
+        });
+
+        // Add any "Extra" categories not in default list
+        Object.keys(byCat).forEach(key => {
+            if (!defaults.find(d => d.name === key)) {
+                catList.push({
+                    name: key,
+                    icon: '❓',
+                    amount: byCat[key],
+                    percent: totalExp > 0 ? (byCat[key] / totalExp) * 100 : 0
+                });
+            }
+        });
+
+        // Sort by Amount Desc
+        catList.sort((a, b) => b.amount - a.amount);
+
+        // Conic Gradient Logic
+        let gradientParts = [];
+        let currentDeg = 0;
+        const colors = ['#FF6B6B', '#4ECDC4', '#FFE66D', '#1A535C', '#FF9F1C', '#2EC4B6', '#E71D36', '#FDFFFC', '#011627'];
+
+        catList.forEach((c, i) => {
+            if (c.percent > 0) {
+                const deg = (c.percent / 100) * 360;
+                gradientParts.push(`${colors[i % colors.length]} ${currentDeg}deg ${currentDeg + deg}deg`);
+                currentDeg += deg;
+            }
+        });
+
+        const conic = gradientParts.length > 0 ? `conic-gradient(${gradientParts.join(', ')})` : 'conic-gradient(#333 0deg 360deg)';
+
 
         return `
+            <div class="feature-view">
+                <div class="feature-header">
+                    <h2>تحليل المصاريف 📊</h2>
+                    <p class="feature-subtitle">إجمالي المصروفات: <span style="color:var(--danger-red); font-weight:bold;">${totalExp.toLocaleString()} ₪</span></p>
+                </div>
+
+                <div class="chart-container-glass" style="margin-bottom: 25px;">
+                    <div class="pie-chart" style="background: ${conic}; width: 140px; height: 140px; border-radius: 50%; border: 4px solid rgba(255,255,255,0.1); box-shadow: 0 0 20px rgba(0,0,0,0.3);"></div>
+                </div>
+
+                <div class="report-table" style="width: 100%; font-size: 0.95rem;">
+                    ${catList.map((c, i) => `
+                        <div class="report-row" style="display:flex; align-items:center; justify-content:space-between; padding: 12px 10px; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                            <div style="display:flex; align-items:center; gap:10px; flex:1;">
+                                <div style="width:10px; height:10px; border-radius:50%; background:${colors[i % colors.length]};"></div>
+                                <span>${c.icon || ''} ${c.name}</span>
+                            </div>
+                            <div style="text-align:left;">
+                                <div style="font-weight:bold;">${c.amount.toLocaleString()} ₪</div>
+                                <div style="font-size:0.8rem; opacity:0.7;">${c.percent.toFixed(1)}%</div>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+
+                 <button class="btn-primary" onclick="window.closeFeatureModal()" style="margin-top:20px;">إغلاق</button>
+            </div>
+        `;
+    },
+
+    renderSettings() {
+        return `
+             <div class="feature-view">
+                <div class="feature-header">
+                    <h2>الإعدادات ⚙️</h2>
+                    <p class="feature-subtitle">التفضيلات والتنبيهات</p>
+                </div>
+
+                <div class="settings-group" style="background:rgba(255,255,255,0.05); border-radius:15px; padding:15px; margin-bottom:15px; text-align:right;">
+                    <h3 style="font-size:16px; margin-bottom:15px; color:var(--primary-neon);">🎨 المظهر</h3>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                         <span>لون مميز</span>
+                         <input type="color" value="#00f3ff" style="border:none; width:40px; height:40px; cursor:pointer;" onchange="document.documentElement.style.setProperty('--primary-neon', this.value)">
+                    </div>
+                </div>
+
+                 <div class="settings-group" style="background:rgba(255,255,255,0.05); border-radius:15px; padding:15px; margin-bottom:15px; text-align:right;">
+                    <h3 style="font-size:16px; margin-bottom:15px; color:var(--accent-pink);">🔔 التنبيهات</h3>
+                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                         <span>تذكير يومي بتسجيل المصاريف</span>
+                         <label class="switch">
+                            <input type="checkbox" checked onchange="window.showToast('تم تحديث إعدادات التنبيهات')">
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+                     <div style="display:flex; justify-content:space-between; align-items:center;">
+                         <span>تنبيه تجاوز الميزانية</span>
+                         <label class="switch">
+                            <input type="checkbox" checked onchange="window.showToast('تم تحديث إعدادات التنبيهات')">
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="settings-group" style="background:rgba(255,255,255,0.05); border-radius:15px; padding:15px; margin-bottom:15px; text-align:right;">
+                    <h3 style="font-size:16px; margin-bottom:15px; color:var(--success-green);">💾 البيانات</h3>
+                    <button class="glass-btn-sm" style="width:100%; margin-bottom:10px;" onclick="window.handleAppAction('export_csv')"><i class="fa-solid fa-file-csv"></i> تصدير البيانات (Excel/CSV)</button>
+                    <button class="glass-btn-sm" style="width:100%; color:var(--danger-red); border-color:var(--danger-red);" onclick="window.handleAppAction('reset_app')"><i class="fa-solid fa-triangle-exclamation"></i> إعادة ضبط المصنع</button>
+                </div>
+
+                <button class="btn-primary" onclick="window.closeFeatureModal()">حفظ وإغلاق</button>
+
+                <style>
+                    /* Toggle Switch CSS (Mini) */
+                    .switch { position: relative; display: inline-block; width: 40px; height: 20px; }
+                    .switch input { opacity: 0; width: 0; height: 0; }
+                    .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 34px; }
+                    .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 2px; bottom: 2px; background-color: white; transition: .4s; border-radius: 50%; }
+                    input:checked + .slider { background-color: var(--primary-neon); }
+                    input:checked + .slider:before { transform: translateX(20px); }
+                </style>
+             </div>
+        `;
+    },
+    // Calc spent this month
+    const now = new Date();
+    const monthTx = transactions.filter(tx => {
+        const d = new Date(tx.timestamp || tx.date);
+        return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear() && tx.type === 'expense';
+    });
+
+    const totalSpent = monthTx.reduce((sum, tx) => sum + Number(tx.amount), 0);
+    const percent = Math.min((totalSpent / currentBudget) * 100, 100);
+    const remaining = currentBudget - totalSpent;
+    const statusColor = remaining < 0 ? 'var(--danger-red)' : 'var(--success-green)';
+
+    return `
              <div class="feature-view">
                 <div class="feature-header">
                     <h2>الميزانية الشهرية 💸</h2>
@@ -245,7 +383,7 @@ export const Features = {
                  <button class="btn-primary" style="margin-top:20px" onclick="window.closeFeatureModal()">إغلاق</button>
              </div>
         `;
-    }
+}
 };
 
 // Helper for Colors

@@ -34,7 +34,7 @@ export function renderMore() {
       </div>
 
       <!-- Settings -->
-      <div class="more-card">
+      <div class="more-card" onclick="window.handleAppAction('settings')">
         <div class="more-icon"><i class="fa-solid fa-gear"></i></div>
         <span class="more-title">الإعدادات</span>
         <span class="more-desc">التفضيلات والتنبيهات</span>
