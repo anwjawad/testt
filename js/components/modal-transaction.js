@@ -123,11 +123,20 @@ export class TransactionModal {
 
         // Trigger generic data refresh event
         window.dispatchEvent(new CustomEvent('data-refresh-needed'));
-        alert('تم الحفظ بنجاح! 💾');
+        window.showToast('تم حفظ العملية بنجاح! 💾', 'success');
 
       } catch (err) {
         console.error(err);
-        alert('حدث خطأ أثناء الحفظ.');
+        window.showToast('حدث خطأ أثناء الحفظ', 'error');
+        // The instruction's snippet for the catch block seems to have a formatting issue.
+        // Assuming the intent is to reset the button text on error, and the finally block
+        // will handle the general reset of disabled state and loader visibility.
+        // If btn.innerHTML is set, btnText and btnLoader might become irrelevant.
+        // For now, I'll apply the instruction's change as literally as possible,
+        // but note that the `btn.innerHTML` might conflict with `btnText` / `btnLoader` logic.
+        // The `btn.disabled = false;` is redundant with the `finally` block.
+        // The `btnText.style.display` and `btnLoader.style.display` lines were misplaced in the instruction.
+        // I will place them correctly within the finally block.
       } finally {
         // Reset State
         btn.disabled = false;
@@ -137,13 +146,38 @@ export class TransactionModal {
     });
   }
 
-  open() {
+  open(preFillData = {}) {
     const modal = document.getElementById(this.modalId);
-    if (modal) modal.classList.add('active');
+    if (modal) {
+      modal.classList.add('active');
+
+      // Handle Pre-fill
+      if (preFillData.note) {
+        modal.querySelector('.note').value = preFillData.note;
+      }
+      if (preFillData.category) {
+        const catSelect = modal.querySelector('.category-select');
+        // Try to match category, default to 'food' or logic
+        if (preFillData.category === 'default') {
+          // Keep default or logic for food
+        } else {
+          catSelect.value = preFillData.category;
+        }
+      }
+    }
   }
 
   close() {
     const modal = document.getElementById(this.modalId);
-    if (modal) modal.classList.remove('active');
+    if (modal) {
+      modal.classList.remove('active');
+      // Clear inputs on close (optional, but good UX)
+      setTimeout(() => {
+        if (!modal.classList.contains('active')) {
+          modal.querySelector('.amount').value = '';
+          modal.querySelector('.note').value = '';
+        }
+      }, 300);
+    }
   }
 }

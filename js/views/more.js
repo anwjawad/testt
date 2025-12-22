@@ -1,5 +1,5 @@
 export function renderMore() {
-    return `
+  return `
     <div class="section-header">
       <h3>المزيد</h3>
     </div>
@@ -38,6 +38,13 @@ export function renderMore() {
         <div class="more-icon"><i class="fa-solid fa-gear"></i></div>
         <span class="more-title">الإعدادات</span>
         <span class="more-desc">التفضيلات والتنبيهات</span>
+      </div>
+
+      <!-- Logout -->
+      <div class="more-card" onclick="window.handleAppAction('logout')">
+        <div class="more-icon negative"><i class="fa-solid fa-right-from-bracket"></i></div>
+        <span class="more-title">تسجيل خروج</span>
+        <span class="more-desc">تبديل المستخدم</span>
       </div>
     </div>
     
