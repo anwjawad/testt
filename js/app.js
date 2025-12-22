@@ -202,7 +202,14 @@ document.addEventListener("DOMContentLoaded", async () => {
         let hasCache = false;
 
         if (cachedTx && Array.isArray(cachedTx)) {
-            State.transactions = cachedTx;
+            // Normalize Data: Ensure 'date' field exists for filtering
+            State.transactions = cachedTx.map(tx => {
+                const t = { ...tx };
+                if (!t.date && t.timestamp) {
+                    t.date = new Date(t.timestamp).toISOString().split('T')[0];
+                }
+                return t;
+            });
             if (cachedTx.length > 0) hasCache = true;
         }
 
@@ -224,7 +231,14 @@ document.addEventListener("DOMContentLoaded", async () => {
             let updated = false;
             // StorageService.sync returns the unwrapped array (or null on fail)
             if (freshTx && Array.isArray(freshTx)) {
-                State.transactions = freshTx;
+                // Normalize Data: Ensure 'date' field exists for filtering
+                State.transactions = freshTx.map(tx => {
+                    const t = { ...tx };
+                    if (!t.date && t.timestamp) {
+                        t.date = new Date(t.timestamp).toISOString().split('T')[0];
+                    }
+                    return t;
+                });
                 updated = true;
             }
             if (freshList && Array.isArray(freshList)) {
