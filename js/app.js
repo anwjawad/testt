@@ -179,9 +179,10 @@ document.addEventListener("DOMContentLoaded", async () => {
             window.openFeatureModal(Features.renderReports(filteredTx));
         } else if (action === 'goals') {
             window.openFeatureModal(Features.renderGoals());
-        } else if (action === 'bills' || action === 'budget') {
+        } else if (action === 'bills') {
+            window.openFeatureModal(Features.renderBills());
+        } else if (action === 'budget') {
             window.openFeatureModal(Features.renderUpcoming());
-            window.openFeatureModal(Features.renderBills()); // Updated to renderBills
         }
     };
     // --- Data Loading ---
@@ -260,6 +261,22 @@ document.addEventListener("DOMContentLoaded", async () => {
         // Re-attach listeners for dynamic content
         attachViewListeners();
         updateNavState();
+    }
+
+    function attachViewListeners() {
+        // Placeholder for any view-specific event binding
+        // Most events are handled via delegation or inline onclicks
+    }
+
+    function updateNavState() {
+        const navItems = document.querySelectorAll(".nav-item");
+        navItems.forEach(item => {
+            if (item.dataset.target === State.currentView) {
+                item.classList.add("active");
+            } else {
+                item.classList.remove("active");
+            }
+        });
     }
 
     // --- Event Listeners ---

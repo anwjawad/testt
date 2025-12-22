@@ -123,6 +123,19 @@ export const Features = {
                 <button class="btn-primary" onclick="window.closeFeatureModal()">إغلاق</button>
             </div>
         `;
+    },
+
+    renderUpcoming() {
+        return `
+             <div class="feature-view">
+                <div class="feature-header">
+                    <h2>قريباً... 🚀</h2>
+                </div>
+                <p style="text-align:center; opacity:0.7;">هذه الميزة قيد التطوير!</p>
+                <div style="font-size: 50px; text-align: center; margin: 30px;">🚧</div>
+                 <button class="btn-primary" onclick="window.closeFeatureModal()">إغلاق</button>
+             </div>
+        `;
     }
 };
 
