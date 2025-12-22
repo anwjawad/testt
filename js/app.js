@@ -277,6 +277,17 @@ document.addEventListener("DOMContentLoaded", async () => {
     async function loadData() {
         const mainView = document.getElementById("main-view");
 
+        // --- MIGRATION: Force New Categories One Time ---
+        if (!localStorage.getItem('migrated_cats_v1')) {
+            const newDefaults = [
+                { name: 'ديون', icon: '💸' }, { name: 'راتب', icon: '💰' }, { name: 'سيارة', icon: '🚗' }, { name: 'فنكهة', icon: '🎡' }, { name: 'فواتير شهرية', icon: '📉' }, { name: 'مصروف امل', icon: '👩' }, { name: 'مصروف بيت', icon: '🏠' }, { name: 'مصروف لولو', icon: '👧' }, { name: 'مصروف جواد', icon: '👨' }
+            ];
+            localStorage.setItem('moneyfy_categories', JSON.stringify(newDefaults));
+            localStorage.setItem('migrated_cats_v1', 'true');
+            console.log("Migrated to new categories");
+        }
+        // ------------------------------------------------
+
         // Restrict User_2 to Market
         if (State.currentUser && State.currentUser.id === 'user_2') {
             State.currentView = 'market';
@@ -316,7 +327,23 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         // 2. Wait for Background Sync from API
         try {
-            const [freshTx, freshList] = await Promise.all([syncTxPromise, syncListPromise]);
+            const settingsPromise = API.fetchSettings(); // Fetch Settings
+            const [freshTx, freshList, freshSettings] = await Promise.all([syncTxPromise, syncListPromise, settingsPromise]);
+
+            // Handle Settings Sync
+            if (freshSettings && freshSettings.data) {
+                const s = freshSettings.data;
+                if (s.categories) localStorage.setItem('moneyfy_categories', JSON.stringify(s.categories));
+                if (s.goals) localStorage.setItem('moneyfy_goals', JSON.stringify(s.goals));
+                if (s.budget) localStorage.setItem('moneyfy_budget', s.budget);
+
+                // Merge Deleted Items (Union)
+                if (s.deleted_items && Array.isArray(s.deleted_items)) {
+                    const localDeleted = JSON.parse(localStorage.getItem('moneyfy_deleted_items') || '[]');
+                    const mergedDeleted = [...new Set([...localDeleted, ...s.deleted_items])];
+                    localStorage.setItem('moneyfy_deleted_items', JSON.stringify(mergedDeleted));
+                }
+            }
 
             let updated = false;
             // StorageService.sync returns the unwrapped array (or null on fail)
@@ -340,7 +367,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             }
 
             if (updated) {
-                console.log("Data synced from cloud");
+                console.log("Data & Settings synced from cloud");
                 renderCurrentView();
             }
 

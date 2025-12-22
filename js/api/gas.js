@@ -88,3 +88,15 @@ export async function deleteShoppingItem(itemId) {
         itemId
     });
 }
+
+// --- Settings API ---
+export async function fetchSettings() {
+    return gasCallJSONP({ action: "getSettings" });
+}
+
+export async function saveSettings(settingsObj) {
+    return gasCallJSONP({
+        action: "saveSettings",
+        settingsJson: JSON.stringify(settingsObj)
+    });
+}
