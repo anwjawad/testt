@@ -286,6 +286,30 @@ document.addEventListener("DOMContentLoaded", async () => {
             let val = parseFloat(data.replace(/[^0-9.]/g, ''));
             if (val) localStorage.setItem('moneyfy_budget', val);
         }
+        else if (action === 'settings') {
+            window.openFeatureModal(Features.renderSettings());
+        }
+        else if (action === 'export_csv') {
+            const txs = State.transactions;
+            let csvContent = "data:text/csv;charset=utf-8,\uFEFF"; // BOM for Excel
+            csvContent += "ID,Date,Type,Category,Amount,Note\n";
+            txs.forEach(t => {
+                csvContent += `${t.id},${t.date},${t.type},${t.category},${t.amount},${t.note || ''}\n`;
+            });
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "moneyfy_data.csv");
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+        }
+        else if (action === 'reset_app') {
+            if (confirm('تحذير: هذا سيحذف جميع البيانات المحفوظة محلياً. هل أنت متأكد؟')) {
+                localStorage.clear();
+                location.reload();
+            }
+        }
     };
     // --- Data Loading ---
     async function loadData() {
