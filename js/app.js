@@ -150,7 +150,15 @@ document.addEventListener("DOMContentLoaded", async () => {
         };
         try {
             console.log("Syncing settings to cloud...", settings);
-            await API.saveSettings(settings); // Background save
+            const result = await API.saveSettings(settings);
+            if (!result || !result.ok) {
+                console.warn("Cloud sync warning:", result);
+                if (result && result.error === "UNKNOWN_ACTION") {
+                    window.showToast("تنبيه: الكود في جوجل قديم، يرجى تحديث النشر (Deploy)", "error");
+                }
+            } else {
+                console.log("Settings synced successfully.");
+            }
         } catch (e) { console.error("Settings sync failed", e); }
     }
 
