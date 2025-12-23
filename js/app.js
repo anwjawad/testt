@@ -10,6 +10,7 @@ import * as API from './api/gas.js'; // Still needed for direct calls in helpers
 
 // Moneyfy V2 - Core Application Logic
 console.log("Moneyfy V2 Initializing...");
+window.onload = () => console.log("Window Loaded");
 
 const State = {
     transactions: [],
@@ -433,6 +434,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                     }
                     return t;
                 });
+                console.log("DEBUG: Data Loaded from Cloud:", State.transactions); // DEBUG LOG
                 updated = true;
             }
             if (freshList && Array.isArray(freshList)) {
