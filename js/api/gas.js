@@ -49,7 +49,6 @@ function gasCallJSONP(paramsObj = {}) {
 
         document.body.appendChild(scriptTag);
     });
-});
 }
 
 // --- API Methods ---
