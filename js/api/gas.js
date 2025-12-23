@@ -100,4 +100,3 @@ export async function saveSettings(settingsObj) {
         settingsJson: JSON.stringify(settingsObj)
     });
 }
-

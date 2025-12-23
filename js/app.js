@@ -373,8 +373,12 @@ document.addEventListener("DOMContentLoaded", async () => {
             // Normalize Data: Ensure 'date' field exists for filtering
             State.transactions = cachedTx.map(tx => {
                 const t = { ...tx };
-                if (!t.date && t.timestamp) {
-                    t.date = new Date(t.timestamp).toISOString().split('T')[0];
+                // Robust Date Normalization
+                const rawDate = t.date || t.timestamp;
+                if (rawDate) {
+                    try {
+                        t.date = new Date(rawDate).toISOString().split('T')[0];
+                    } catch (e) { t.date = rawDate; } // Fallback
                 }
                 return t;
             });
@@ -420,8 +424,12 @@ document.addEventListener("DOMContentLoaded", async () => {
                 // Normalize Data: Ensure 'date' field exists for filtering
                 State.transactions = freshTx.map(tx => {
                     const t = { ...tx };
-                    if (!t.date && t.timestamp) {
-                        t.date = new Date(t.timestamp).toISOString().split('T')[0];
+                    // Robust Date Normalization
+                    const rawDate = t.date || t.timestamp;
+                    if (rawDate) {
+                        try {
+                            t.date = new Date(rawDate).toISOString().split('T')[0];
+                        } catch (e) { t.date = rawDate; } // Fallback
                     }
                     return t;
                 });
