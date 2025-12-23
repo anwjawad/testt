@@ -13,6 +13,11 @@ function gasCallJSONP(paramsObj = {}) {
         // Generate unique callback name
         const cbName = "__gas_cb_" + Date.now() + "_" + Math.floor(Math.random() * 1e9);
 
+        // Construct URL (Restored)
+        const queryObj = { ...paramsObj, callback: cbName };
+        const qs = new URLSearchParams(queryObj).toString();
+        const finalUrl = GAS_URL + "?" + qs;
+
         // Inject Script
         const scriptTag = document.createElement("script");
         scriptTag.src = finalUrl;
