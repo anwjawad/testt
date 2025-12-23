@@ -13,35 +13,43 @@ function gasCallJSONP(paramsObj = {}) {
         // Generate unique callback name
         const cbName = "__gas_cb_" + Date.now() + "_" + Math.floor(Math.random() * 1e9);
 
-        // Global callback for JSONP
-        window[cbName] = function (data) {
-            // Cleanup
-            try { delete window[cbName]; } catch (e) { window[cbName] = undefined; }
-            if (scriptTag && scriptTag.parentNode) {
-                scriptTag.parentNode.removeChild(scriptTag);
-            }
-            resolve(data);
-        };
-
-        // Construct URL
-        const queryObj = { ...paramsObj, callback: cbName };
-        const qs = new URLSearchParams(queryObj).toString();
-        const finalUrl = GAS_URL + "?" + qs;
-
         // Inject Script
         const scriptTag = document.createElement("script");
         scriptTag.src = finalUrl;
         scriptTag.async = true;
-        scriptTag.onerror = function () {
+
+        // Cleanup Function
+        function cleanup() {
             try { delete window[cbName]; } catch (e) { window[cbName] = undefined; }
             if (scriptTag && scriptTag.parentNode) {
                 scriptTag.parentNode.removeChild(scriptTag);
             }
+        }
+
+        // Timeout Safety (15s)
+        const timeoutId = setTimeout(() => {
+            cleanup();
+            console.warn("GAS Request Timeout:", paramsObj.action);
+            resolve({ ok: false, error: "TIMEOUT" });
+        }, 15000);
+
+        // Success Callback
+        window[cbName] = function (data) {
+            clearTimeout(timeoutId);
+            cleanup();
+            resolve(data);
+        };
+
+        // Error Handler
+        scriptTag.onerror = function () {
+            clearTimeout(timeoutId);
+            cleanup();
             resolve({ ok: false, error: "SCRIPT_LOAD_ERROR" });
         };
 
         document.body.appendChild(scriptTag);
     });
+});
 }
 
 // --- API Methods ---
